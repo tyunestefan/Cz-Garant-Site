@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+
+<header class="hero">
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <div class="shield" aria-hidden="true">
+      <div class="shield-sheen"></div>
+      <span class="shield-mark">0</span>
+    </div>
+    <h1 class="hero-title">Cz Garant</h1>
+    <p class="hero-tagline">Claim Zero — безопасность наш актив</p>
+    <p class="hero-sub">
+      Экосистема сервисов для безопасных сделок в Telegram: проверка репутации,
+      модерация, отзывы и разбор споров — в одном проекте.
+    </p>
+    <div class="hero-actions">
+      <a href="#services" class="btn btn-ghost">Смотреть сервисы</a>
+      <a href="{{ project_chat and 'https://t.me/' + project_chat.lstrip('@') or '#' }}" class="btn btn-primary">Наш чат</a>
+    </div>
+  </div>
+</header>
+
+<section id="services" class="services">
+  <h2 class="section-title">Сервисы проекта</h2>
+  <div class="services-grid">
+    {% for s in services %}
+    <article class="service-card">
+      <div class="service-card-glow" aria-hidden="true"></div>
+      <h3>{{ s.name }}</h3>
+      <p class="service-desc">{{ s.description }}</p>
+      <code class="service-bot">{{ s.bot }}</code>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="login" class="login-section">
+  <h2 class="section-title">Связь с проектом</h2>
+  <p class="login-sub">
+    Войдите через Telegram, чтобы написать напрямую владельцам проекта —
+    сообщение придёт им в личку.
+  </p>
+
+  {% if user %}
+    <a href="/contact" class="btn btn-primary">Перейти к форме связи</a>
+  {% else %}
+    <div id="tg-login-container"></div>
+    <script async src="https://telegram.org/js/telegram-widget.js?22"
+      data-telegram-login="{{ bot_username }}"
+      data-size="large"
+      data-radius="10"
+      data-auth-url="{{ request.base_url }}login/callback"
+      data-request-access="write">
+    </script>
+  {% endif %}
+</section>
+
+{% endblock %}
