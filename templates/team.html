@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Команда — Cz Garant{% endblock %}
+{% block content %}
+<section class="page-section">
+  <h1 class="section-title-left">Команда проекта</h1>
+
+  {% for group in team %}
+  <div class="team-group">
+    <h2 class="team-group-title">{{ group.role }}</h2>
+    <div class="team-grid">
+      {% for member in group.members %}
+      <a href="https://t.me/{{ member.lstrip('@') }}" class="team-card">
+        <span class="team-card-username">{{ member }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}
