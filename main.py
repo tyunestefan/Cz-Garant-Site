@@ -1,0 +1,274 @@
+import httpx
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+from config import config
+from auth import verify_telegram_login, create_session_cookie, read_session_cookie
+
+app = FastAPI(title="Cz Garant")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+jinja_env = Environment(
+    loader=FileSystemLoader("templates"),
+    autoescape=select_autoescape(["html"]),
+)
+
+
+def render(template_name: str, **context) -> HTMLResponse:
+    template = jinja_env.get_template(template_name)
+    return HTMLResponse(template.render(**context))
+
+
+# ---------- ДАННЫЕ ПРОЕКТА ----------
+
+SERVICES = [
+    {
+        "slug": "scam-base",
+        "name": "Скам-база",
+        "bot": "@Czskambazabot",
+        "logo": "/static/img/logo-scambase.jpeg",
+        "description": "Проверка пользователей по базе недобросовестных участников — по ID или юзернейму.",
+        "long_description": (
+            "Скам-база хранит записи о недобросовестных участниках по числовому "
+            "Telegram ID — это надёжнее username, потому что ник можно сменить, "
+            "а ID остаётся неизменным. Проверить контрагента перед сделкой можно "
+            "прямо в боте: достаточно прислать ID или username, и бот сам "
+            "определит текущий ID и проверит его по базе."
+        ),
+    },
+    {
+        "slug": "piar",
+        "name": "Пиар-бот",
+        "bot": "@CzPiarbot",
+        "logo": "/static/img/logo-piar.jpeg",
+        "description": "Покупка обязательной подписки (ОП) на определённое количество часов для продвижения.",
+        "long_description": (
+            "Пиар-бот позволяет купить обязательную подписку (ОП) на ваш канал "
+            "или чат на заданное количество часов — простой способ продвинуть "
+            "проект внутри сообщества Cz Garant."
+        ),
+    },
+    {
+        "slug": "chat-manager",
+        "name": "Чат-менеджер",
+        "bot": "@CzChatManagerbot",
+        "logo": "/static/img/logo-chatmanager.png",
+        "description": "Модерация чата сообщества: правила, автоответы, служебные функции.",
+        "long_description": (
+            "Чат-менеджер следит за порядком в чате Cz Garant: применяет "
+            "наказания согласно правилам, обрабатывает вызовы гаранта и жалобы, "
+            "отвечает на служебные команды. Полный список правил — на странице "
+            "«Правила»."
+        ),
+    },
+    {
+        "slug": "reviews",
+        "name": "Отзывы",
+        "bot": "@CzRevewsbot",
+        "logo": "/static/img/logo-reviews.jpeg",
+        "description": "Оставляйте отзывы о сделках и участниках проекта по именному ключу-приглашению.",
+        "long_description": (
+            "Бот отзывов позволяет оставить именной отзыв о сделке или участнике "
+            "по ключу-приглашению, который выдаёт администрация. Отзыв уходит "
+            "на рассмотрение администрации и попадает в публичную историю."
+        ),
+    },
+]
+
+SERVICES_BY_SLUG = {s["slug"]: s for s in SERVICES}
+
+TEAM = [
+    {"role": "Владельцы", "members": ["@mrtley", "@Timmy_Falcon"]},
+    {"role": "Гаранты", "members": ["@mrtley", "@Timmy_Falcon"]},
+    {"role": "Модераторы", "members": ["@NOFIK_Top"]},
+]
+
+RULES = [
+    {"violation": "Спам", "punishment": "🔇 Мут 5 дней"},
+    {"violation": "Оскорбление админов / владельца", "punishment": "🔇 Мут 1 день"},
+    {"violation": "Краш-стикеры", "punishment": "🔇 Мут 1 неделю"},
+    {"violation": "18+, нацизм, фашизм и т.п.", "punishment": "🔇 Мут 1 день"},
+    {"violation": "Оскорбление участников", "punishment": "🔇 Мут 1 час"},
+    {"violation": "Расчленёнка", "punishment": "🔇 Мут 1 неделю"},
+    {"violation": "Скам", "punishment": "🚫 Бан навсегда"},
+    {"violation": "Реклама", "punishment": "🔇 Мут 1 неделю"},
+    {"violation": "Клевета на админа / владельца", "punishment": "🔇 Мут 1 день"},
+]
+
+FAQ = [
+    {
+        "q": "Что такое Cz Garant?",
+        "a": "Экосистема сервисов для безопасных сделок в Telegram: проверка репутации участников, фиксация условий сделки и разрешение спорных ситуаций без опоры на личное доверие.",
+    },
+    {
+        "q": "Кто такой гарант в этой системе?",
+        "a": "Гарант — независимая сторона при сделках и конфликтах: фиксирует условия взаимодействия, следит за выполнением обязательств и помогает разрешать споры на основе фактов из переписки, а не эмоций.",
+    },
+    {
+        "q": "Как проверить пользователя перед сделкой?",
+        "a": "Напишите его ID или username боту @Czskambazabot — он сверит по скам-базе и пришлёт результат.",
+    },
+    {
+        "q": "Как позвать гаранта для сделки?",
+        "a": "Сделайте reply на сообщение участника командой /адм с указанием предмета сделки и суммы. У обоих участников должен быть запущен бот.",
+    },
+    {
+        "q": "Что делать, если меня замутили или забанили по ошибке?",
+        "a": "Напишите боту в личные сообщения и нажмите кнопку «Подать апелляцию», затем опишите ситуацию одним сообщением.",
+    },
+    {
+        "q": "Как оставить отзыв о сделке?",
+        "a": "Через бота @CzRevewsbot по именному ключу-приглашению, который выдаёт администрация.",
+    },
+    {
+        "q": "Данные из скам-базы привязаны к username или к ID?",
+        "a": "К числовому Telegram ID — это надёжнее, так как username можно сменить, а ID остаётся неизменным.",
+    },
+    {
+        "q": "Кто создал сайт?",
+        "a": "Сайт создан и поддерживается @mrtley.",
+    },
+]
+
+
+# ---------- ВСПОМОГАТЕЛЬНОЕ ----------
+
+def get_current_user(request: Request) -> dict | None:
+    return read_session_cookie(request.cookies.get("cz_session"))
+
+
+def base_context(request: Request, user: dict | None) -> dict:
+    return {
+        "request": request,
+        "dispute_chat_url": config.dispute_chat_url,
+        "bot_username": config.bot_username,
+        "user": user,
+    }
+
+
+# ---------- МАРШРУТЫ ----------
+
+@app.get("/health")
+async def health():
+    """Лёгкий эндпоинт для внешнего пинга (FastCron/UptimeRobot)."""
+    return {"status": "ok"}
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    user = get_current_user(request)
+    return render(
+        "index.html",
+        **base_context(request, user),
+        services=SERVICES,
+        project_chat=config.project_chat,
+    )
+
+
+@app.get("/about", response_class=HTMLResponse)
+async def about(request: Request):
+    user = get_current_user(request)
+    return render("about.html", **base_context(request, user))
+
+
+@app.get("/services", response_class=HTMLResponse)
+async def services_list(request: Request):
+    user = get_current_user(request)
+    return render("services_list.html", **base_context(request, user), services=SERVICES)
+
+
+@app.get("/services/{slug}", response_class=HTMLResponse)
+async def service_detail(request: Request, slug: str):
+    user = get_current_user(request)
+    service = SERVICES_BY_SLUG.get(slug)
+    if not service:
+        return RedirectResponse("/services")
+    return render("service_detail.html", **base_context(request, user), service=service)
+
+
+@app.get("/team", response_class=HTMLResponse)
+async def team(request: Request):
+    user = get_current_user(request)
+    return render("team.html", **base_context(request, user), team=TEAM)
+
+
+@app.get("/rules", response_class=HTMLResponse)
+async def rules(request: Request):
+    user = get_current_user(request)
+    return render("rules.html", **base_context(request, user), rules=RULES)
+
+
+@app.get("/faq", response_class=HTMLResponse)
+async def faq(request: Request):
+    user = get_current_user(request)
+    return render("faq.html", **base_context(request, user), faq=FAQ)
+
+
+@app.get("/login/callback")
+async def telegram_login_callback(request: Request):
+    """Telegram Login Widget редиректит сюда с данными пользователя в query-параметрах."""
+    params = dict(request.query_params)
+
+    if not verify_telegram_login(params):
+        return RedirectResponse("/?login_error=1")
+
+    user = {
+        "id": params.get("id"),
+        "first_name": params.get("first_name"),
+        "username": params.get("username"),
+        "photo_url": params.get("photo_url"),
+    }
+
+    response = RedirectResponse("/dashboard")
+    response.set_cookie(
+        "cz_session",
+        create_session_cookie(user),
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=30 * 24 * 3600,  # 30 дней — чтобы не логиниться заново каждую неделю
+    )
+    return response
+
+
+@app.get("/logout")
+async def logout():
+    response = RedirectResponse("/")
+    response.delete_cookie("cz_session")
+    return response
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/")
+    return render("dashboard.html", **base_context(request, user))
+
+
+@app.post("/contact")
+async def contact_submit(request: Request, message: str = Form(...)):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/", status_code=303)
+
+    text = (
+        f"📩 <b>Новое сообщение с сайта Cz Garant</b>\n\n"
+        f"👤 От: {user.get('first_name', '')} (@{user.get('username') or 'без username'})\n"
+        f"🆔 Telegram ID: <code>{user.get('id')}</code>\n\n"
+        f"💬 {message}"
+    )
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        for admin_id in config.admin_ids:
+            try:
+                await client.post(
+                    f"https://api.telegram.org/bot{config.bot_token}/sendMessage",
+                    json={"chat_id": admin_id, "text": text, "parse_mode": "HTML"},
+                )
+            except Exception:
+                pass  # не роняем запрос пользователя из-за одного неотправленного уведомления
+
+    return render("dashboard.html", **base_context(request, user), sent=True)
