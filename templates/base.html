@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Cz Garant — безопасность наш актив{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+<nav class="topnav">
+  <a href="/" class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    Cz Garant
+  </a>
+  <div class="nav-links">
+    <a href="/#services">Сервисы</a>
+    <a href="{{ dispute_chat_url or '#' }}">Чат споров</a>
+    {% if user %}
+      <a href="/contact" class="nav-cta">Связаться</a>
+      <a href="/logout" class="nav-ghost">Выйти</a>
+    {% else %}
+      <a href="/#login" class="nav-cta">Войти через Telegram</a>
+    {% endif %}
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer class="site-footer">
+  <span>Cz Garant · Claim Zero</span>
+  <span class="dot">·</span>
+  <span>безопасность наш актив</span>
+</footer>
+</body>
+</html>
