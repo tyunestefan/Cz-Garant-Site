@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ service.name }} — Cz Garant{% endblock %}
+{% block content %}
+<section class="page-section service-detail">
+  <a href="/services" class="back-link">← Все сервисы</a>
+  <div class="service-detail-header">
+    <img src="{{ service.logo }}" alt="{{ service.name }}" class="service-detail-logo">
+    <div>
+      <h1 class="section-title-left">{{ service.name }}</h1>
+      <code class="service-bot">{{ service.bot }}</code>
+    </div>
+  </div>
+
+  <div class="prose">
+    <p>{{ service.long_description }}</p>
+  </div>
+
+  <a href="https://t.me/{{ service.bot.lstrip('@') }}" class="btn btn-primary">Открыть {{ service.bot }}</a>
+</section>
+{% endblock %}
