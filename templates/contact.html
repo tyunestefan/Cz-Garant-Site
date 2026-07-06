@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="contact-section">
+  <h1 class="section-title">Связаться с владельцами</h1>
+
+  {% if sent %}
+    <div class="alert alert-success">
+      Сообщение отправлено. Владельцы проекта получили его в Telegram.
+    </div>
+  {% endif %}
+
+  <p class="contact-sub">
+    Вошли как <strong>{{ user.first_name }}</strong>
+    {% if user.username %}(@{{ user.username }}){% endif %}.
+    Сообщение уйдёт напрямую владельцам Cz Garant в личные сообщения.
+  </p>
+
+  <form method="post" action="/contact" class="contact-form">
+    <textarea name="message" rows="6" placeholder="Опишите вопрос или предложение..." required></textarea>
+    <button type="submit" class="btn btn-primary">Отправить</button>
+  </form>
+</section>
+
+{% endblock %}
