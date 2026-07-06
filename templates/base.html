@@ -4,70 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Cz Garant — безопасность наш актив{% endblock %}</title>
-<link rel="stylesheet" href="/static/css/style.css">
+<link rel="icon" type="image/png" href="/static/img/logo-mark.png">
+<link rel="apple-touch-icon" href="/static/img/logo-mark.png">
+<link rel="stylesheet" href="/static/css/style.css?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
+
 <nav class="topnav">
-  <button id="navBurger" class="nav-burger" aria-label="Открыть меню" aria-expanded="false">
-    <span></span><span></span><span></span>
-  </button>
+  <div class="nav-left">
+    <button id="navBurger" class="nav-burger" aria-label="Открыть меню" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="/" class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      Cz Garant
+    </a>
+  </div>
 
-  <a href="/" class="brand">
-    <span class="brand-mark" aria-hidden="true"></span>
-    Cz Garant
-  </a>
-
-  <div class="nav-links">
-    <a href="/about" class="{{ 'nav-active' if request.url.path == '/about' }}">О проекте</a>
-    <a href="/services" class="{{ 'nav-active' if request.url.path.startswith('/services') }}">Сервисы</a>
-    <a href="/team" class="{{ 'nav-active' if request.url.path == '/team' }}">Команда</a>
-    <a href="/rules" class="{{ 'nav-active' if request.url.path == '/rules' }}">Правила</a>
-    <a href="/faq" class="{{ 'nav-active' if request.url.path == '/faq' }}">FAQ</a>
-    <a href="{{ dispute_chat_url or '#' }}">Чат споров</a>
+  <div class="nav-auth">
     {% if user %}
-      <a href="/contact" class="nav-cta">Связаться</a>
-      <a href="/logout" class="nav-ghost">Выйти</a>
+      <a href="/dashboard" class="nav-user">
+        {% if user.photo_url %}
+          <img src="{{ user.photo_url }}" alt="" class="nav-avatar">
+        {% else %}
+          <span class="nav-avatar nav-avatar-fallback">{{ user.first_name[0] if user.first_name else '?' }}</span>
+        {% endif %}
+        <span>{{ user.first_name }}</span>
+      </a>
     {% else %}
-      <span class="nav-login-widget">
-        <script async src="https://telegram.org/js/telegram-widget.js?22"
-          data-telegram-login="{{ bot_username }}"
-          data-size="medium"
-          data-radius="8"
-          data-auth-url="{{ request.url_for('telegram_login_callback') }}"
-          data-request-access="write"></script>
-      </span>
-    {% endif %}
-  </div>
-</nav>
-
-<div id="mobileMenu" class="mobile-menu">
-  <div class="mobile-menu-group">
-    <span class="mobile-menu-heading">О проекте</span>
-    <a href="/about">О проекте</a>
-    <a href="/team">Команда</a>
-  </div>
-
-  <div class="mobile-menu-group">
-    <span class="mobile-menu-heading">Сервисы</span>
-    <a href="/services">Все сервисы</a>
-  </div>
-
-  <div class="mobile-menu-group">
-    <span class="mobile-menu-heading">Правила и вопросы</span>
-    <a href="/rules">Правила чата</a>
-    <a href="/faq">FAQ</a>
-    <a href="{{ dispute_chat_url or '#' }}">Чат споров</a>
-  </div>
-
-  <div class="mobile-menu-group">
-    <span class="mobile-menu-heading">Аккаунт</span>
-    {% if user %}
-      <a href="/contact">Связаться</a>
-      <a href="/logout">Выйти</a>
-    {% else %}
-      <div class="mobile-login-widget">
+      <div class="telegram-login-shimmer">
         <script async src="https://telegram.org/js/telegram-widget.js?22"
           data-telegram-login="{{ bot_username }}"
           data-size="medium"
@@ -77,11 +44,45 @@
       </div>
     {% endif %}
   </div>
-</div>
+</nav>
+
+<div id="drawerOverlay" class="drawer-overlay"></div>
+
+<aside id="drawer" class="drawer">
+  <button id="drawerClose" class="drawer-close" aria-label="Закрыть меню">×</button>
+
+  <div class="drawer-group">
+    <span class="drawer-heading">О проекте</span>
+    <a href="/about" class="{{ 'drawer-active' if request.url.path == '/about' }}">О проекте</a>
+    <a href="/team" class="{{ 'drawer-active' if request.url.path == '/team' }}">Команда</a>
+  </div>
+
+  <div class="drawer-group">
+    <span class="drawer-heading">Сервисы</span>
+    <a href="/services" class="{{ 'drawer-active' if request.url.path.startswith('/services') }}">Все сервисы</a>
+  </div>
+
+  <div class="drawer-group">
+    <span class="drawer-heading">Правила и вопросы</span>
+    <a href="/rules" class="{{ 'drawer-active' if request.url.path == '/rules' }}">Правила чата</a>
+    <a href="/faq" class="{{ 'drawer-active' if request.url.path == '/faq' }}">FAQ</a>
+    <a href="{{ dispute_chat_url or '#' }}">Чат споров</a>
+  </div>
+
+  {% if user %}
+  <div class="drawer-group">
+    <span class="drawer-heading">Аккаунт</span>
+    <a href="/dashboard">Личный кабинет</a>
+    <a href="/contact">Связаться с владельцами</a>
+    <a href="/logout">Выйти</a>
+  </div>
+  {% endif %}
+</aside>
 
 {% block content %}{% endblock %}
 
 <footer class="site-footer">
+  <a href="/" class="footer-brand">Cz Garant</a>
   <div class="footer-links">
     <a href="/about">О проекте</a>
     <a href="/services">Сервисы</a>
@@ -89,11 +90,8 @@
     <a href="/rules">Правила</a>
     <a href="/faq">FAQ</a>
   </div>
-  <p class="footer-sub">
-    Cz Garant · Claim Zero <span class="dot">·</span> безопасность наш актив
-  </p>
 </footer>
 
-<script src="/static/js/main.js"></script>
+<script src="/static/js/main.js?v=2"></script>
 </body>
 </html>
