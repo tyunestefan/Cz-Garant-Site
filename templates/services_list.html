@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Сервисы — Cz Garant{% endblock %}
+{% block content %}
+<section class="page-section">
+  <h1 class="section-title-left">Сервисы проекта</h1>
+  <div class="services-grid services-grid-page">
+    {% for s in services %}
+    <a href="/services/{{ s.slug }}" class="service-card">
+      <div class="service-card-glow" aria-hidden="true"></div>
+      <img src="{{ s.logo }}" alt="{{ s.name }}" class="service-card-logo">
+      <h3>{{ s.name }}</h3>
+      <p class="service-desc">{{ s.description }}</p>
+      <code class="service-bot">{{ s.bot }}</code>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
