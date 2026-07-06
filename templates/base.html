@@ -10,28 +10,90 @@
 </head>
 <body>
 <nav class="topnav">
+  <button id="navBurger" class="nav-burger" aria-label="Открыть меню" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+
   <a href="/" class="brand">
     <span class="brand-mark" aria-hidden="true"></span>
     Cz Garant
   </a>
+
   <div class="nav-links">
-    <a href="/#services">Сервисы</a>
+    <a href="/about" class="{{ 'nav-active' if request.url.path == '/about' }}">О проекте</a>
+    <a href="/services" class="{{ 'nav-active' if request.url.path.startswith('/services') }}">Сервисы</a>
+    <a href="/team" class="{{ 'nav-active' if request.url.path == '/team' }}">Команда</a>
+    <a href="/rules" class="{{ 'nav-active' if request.url.path == '/rules' }}">Правила</a>
+    <a href="/faq" class="{{ 'nav-active' if request.url.path == '/faq' }}">FAQ</a>
     <a href="{{ dispute_chat_url or '#' }}">Чат споров</a>
     {% if user %}
       <a href="/contact" class="nav-cta">Связаться</a>
       <a href="/logout" class="nav-ghost">Выйти</a>
     {% else %}
-      <a href="/#login" class="nav-cta">Войти через Telegram</a>
+      <span class="nav-login-widget">
+        <script async src="https://telegram.org/js/telegram-widget.js?22"
+          data-telegram-login="{{ bot_username }}"
+          data-size="medium"
+          data-radius="8"
+          data-auth-url="{{ request.url_for('telegram_login_callback') }}"
+          data-request-access="write"></script>
+      </span>
     {% endif %}
   </div>
 </nav>
 
+<div id="mobileMenu" class="mobile-menu">
+  <div class="mobile-menu-group">
+    <span class="mobile-menu-heading">О проекте</span>
+    <a href="/about">О проекте</a>
+    <a href="/team">Команда</a>
+  </div>
+
+  <div class="mobile-menu-group">
+    <span class="mobile-menu-heading">Сервисы</span>
+    <a href="/services">Все сервисы</a>
+  </div>
+
+  <div class="mobile-menu-group">
+    <span class="mobile-menu-heading">Правила и вопросы</span>
+    <a href="/rules">Правила чата</a>
+    <a href="/faq">FAQ</a>
+    <a href="{{ dispute_chat_url or '#' }}">Чат споров</a>
+  </div>
+
+  <div class="mobile-menu-group">
+    <span class="mobile-menu-heading">Аккаунт</span>
+    {% if user %}
+      <a href="/contact">Связаться</a>
+      <a href="/logout">Выйти</a>
+    {% else %}
+      <div class="mobile-login-widget">
+        <script async src="https://telegram.org/js/telegram-widget.js?22"
+          data-telegram-login="{{ bot_username }}"
+          data-size="medium"
+          data-radius="8"
+          data-auth-url="{{ request.url_for('telegram_login_callback') }}"
+          data-request-access="write"></script>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
 {% block content %}{% endblock %}
 
 <footer class="site-footer">
-  <span>Cz Garant · Claim Zero</span>
-  <span class="dot">·</span>
-  <span>безопасность наш актив</span>
+  <div class="footer-links">
+    <a href="/about">О проекте</a>
+    <a href="/services">Сервисы</a>
+    <a href="/team">Команда</a>
+    <a href="/rules">Правила</a>
+    <a href="/faq">FAQ</a>
+  </div>
+  <p class="footer-sub">
+    Cz Garant · Claim Zero <span class="dot">·</span> безопасность наш актив
+  </p>
 </footer>
+
+<script src="/static/js/main.js"></script>
 </body>
 </html>
