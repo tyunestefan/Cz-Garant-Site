@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Правила — Cz Garant{% endblock %}
+{% block content %}
+<section class="page-section">
+  <h1 class="section-title-left">📜 Правила чата Cz Гарант</h1>
+
+  <ol class="rules-list">
+    {% for r in rules %}
+    <li class="rules-item">
+      <span class="rules-violation">{{ r.violation }}</span>
+      <span class="rules-arrow">→</span>
+      <span class="rules-punishment">{{ r.punishment }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+
+  <p class="rules-note">🤝 Будьте вежливы и доброжелательны!</p>
+  <p class="rules-note">⚠️ Написал с твинка пока в муте → 🔇 Мут на твинк до снятия администрацией</p>
+
+  <div class="rules-block">
+    <h2>🛡 Вызов гаранта</h2>
+    <ul>
+      <li>Reply на сообщение участника: <code>/адм текст сделки</code></li>
+      <li>Укажите предмет сделки и сумму</li>
+      <li>У обоих участников должен быть запущен бот</li>
+    </ul>
+  </div>
+
+  <div class="rules-block">
+    <h2>🧾 Апелляция на наказание</h2>
+    <p>
+      Если вы считаете мут/бан ошибочным — напишите боту в ЛС и нажмите кнопку
+      «Подать апелляцию», затем опишите ситуацию одним сообщением.
+    </p>
+  </div>
+
+  <div class="rules-block">
+    <h2>💬 Команды</h2>
+    <p><code>/админы</code> — список администрации</p>
+  </div>
+</section>
+{% endblock %}
