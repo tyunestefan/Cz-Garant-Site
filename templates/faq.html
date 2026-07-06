@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}FAQ — Cz Garant{% endblock %}
+{% block content %}
+<section class="page-section">
+  <h1 class="section-title-left">FAQ</h1>
+  <div class="faq-list">
+    {% for item in faq %}
+    <details class="faq-item">
+      <summary>{{ item.q }}</summary>
+      <p>{{ item.a }}</p>
+    </details>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
