@@ -28,7 +28,7 @@ SERVICES = [
         "slug": "scam-base",
         "name": "Скам-база",
         "bot": "@Czskambazabot",
-        "logo": "/static/img/logo-scambase.jpeg",
+        "logo": "/static/img/logo-scambase.png",
         "description": "Проверка пользователей по базе недобросовестных участников — по ID или юзернейму.",
         "long_description": (
             "Скам-база хранит записи о недобросовестных участниках по числовому "
@@ -42,7 +42,7 @@ SERVICES = [
         "slug": "piar",
         "name": "Пиар-бот",
         "bot": "@CzPiarbot",
-        "logo": "/static/img/logo-piar.jpeg",
+        "logo": "/static/img/logo-piar.png",
         "description": "Покупка обязательной подписки (ОП) на определённое количество часов для продвижения.",
         "long_description": (
             "Пиар-бот позволяет купить обязательную подписку (ОП) на ваш канал "
@@ -67,7 +67,7 @@ SERVICES = [
         "slug": "reviews",
         "name": "Отзывы",
         "bot": "@CzRevewsbot",
-        "logo": "/static/img/logo-reviews.jpeg",
+        "logo": "/static/img/logo-reviews.png",
         "description": "Оставляйте отзывы о сделках и участниках проекта по именному ключу-приглашению.",
         "long_description": (
             "Бот отзывов позволяет оставить именной отзыв о сделке или участнике "
