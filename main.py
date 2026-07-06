@@ -66,7 +66,7 @@ SERVICES = [
     {
         "slug": "reviews",
         "name": "Отзывы",
-        "bot": "@CzRevewsbot",
+        "bot": "@CzReviewsbot",
         "logo": "/static/img/logo-reviews.png",
         "description": "Оставляйте отзывы о сделках и участниках проекта по именному ключу-приглашению.",
         "long_description": (
