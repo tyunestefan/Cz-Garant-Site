@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Апелляция — Cz Garant{% endblock %}
+{% block content %}
+<section class="page-section">
+  <h1 class="section-title-left">Подать апелляцию</h1>
+  <p class="dashboard-card-sub">
+    Если считаете мут или бан ошибочным — опишите ситуацию ниже. Апелляция уйдёт
+    напрямую администрации чат-менеджера в Telegram.
+  </p>
+
+  {% if sent %}
+    <div class="alert alert-success">
+      Апелляция отправлена. Администрация рассмотрит её в ближайшее время.
+    </div>
+  {% endif %}
+
+  {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/appeal" class="contact-form">
+    <textarea name="text" rows="6" maxlength="{{ max_len }}" placeholder="Опишите ситуацию: за что вас замутили/забанили и почему это ошибка..." required></textarea>
+    <button type="submit" class="btn btn-primary">Отправить апелляцию</button>
+  </form>
+</section>
+{% endblock %}
