@@ -54,7 +54,7 @@ SERVICES = [
         "name": "Скам-база",
         "bot": "@Czskambazabot",
         "logo": "/static/img/logo-scambase.png",
-        "description": "Проверка пользователей по базе недобросовестных участников — по ID или юзернейму.",
+        "description": "Проверка пользователей по базе недобросовестных участников через ID.",
         "long_description": (
             "Скам-база хранит записи о недобросовестных участниках по числовому "
             "Telegram ID — надёжнее username, потому что ник можно сменить, "
@@ -281,7 +281,7 @@ async def logout():
 async def dashboard(request: Request):
     user = get_current_user(request)
     if not user:
-        return render("login_required.html", **base_context(request, user))
+        return render("login_required.html", **base_context(request, user), hide_nav_login=True)
     return render("dashboard.html", **base_context(request, user))
 
 
