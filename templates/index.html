@@ -22,7 +22,7 @@
 </header>
 
 <section class="about-preview">
-  <div class="about-preview-inner">
+  <div class="about-preview-inner reveal">
     <h2 class="section-title">О проекте</h2>
     <p>
       Cz Garant (Claim Zero) — сообщество и набор сервисов для тех, кто заключает
@@ -43,7 +43,7 @@
   <h2 class="section-title">Сервисы проекта</h2>
   <div class="services-grid">
     {% for s in services %}
-    <a href="/services/{{ s.slug }}" class="service-card">
+    <a href="/services/{{ s.slug }}" class="service-card reveal">
       <div class="service-card-glow" aria-hidden="true"></div>
       <img src="{{ s.logo }}" alt="{{ s.name }}" class="service-card-logo">
       <h3>{{ s.name }}</h3>
