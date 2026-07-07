@@ -54,7 +54,7 @@ SERVICES = [
         "name": "Скам-база",
         "bot": "@Czskambazabot",
         "logo": "/static/img/logo-scambase.png",
-        "description": "Проверка пользователей по базе недобросовестных участников через ID.",
+        "description": "Проверка пользователей по базе недобросовестных участников — по ID или юзернейму.",
         "long_description": (
             "Скам-база хранит записи о недобросовестных участниках по числовому "
             "Telegram ID — надёжнее username, потому что ник можно сменить, "
@@ -283,6 +283,14 @@ async def dashboard(request: Request):
     if not user:
         return RedirectResponse("/")
     return render("dashboard.html", **base_context(request, user))
+
+
+@app.get("/contact", response_class=HTMLResponse)
+async def contact_page(request: Request):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/")
+    return render("contact.html", **base_context(request, user))
 
 
 @app.post("/contact")
