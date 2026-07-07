@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // ---------- Бургер + боковая панель (на всех устройствах) ----------
   const burger = document.getElementById('navBurger');
   const drawer = document.getElementById('drawer');
   const overlay = document.getElementById('drawerOverlay');
@@ -10,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.classList.add('open');
     burger.classList.add('active');
     burger.setAttribute('aria-expanded', 'true');
-    document.body.style.overflow = 'hidden';
+    document.body.classList.add('drawer-open');
   }
 
   function closeDrawer() {
@@ -18,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.classList.remove('open');
     burger.classList.remove('active');
     burger.setAttribute('aria-expanded', 'false');
-    document.body.style.overflow = '';
+    document.body.classList.remove('drawer-open');
   }
 
   if (burger && drawer && overlay) {
