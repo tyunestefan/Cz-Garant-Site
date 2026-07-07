@@ -1,3 +1,4 @@
+import html
 import httpx
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -7,6 +8,11 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from config import config
 from auth import verify_telegram_login, create_session_cookie, read_session_cookie
 
+try:
+    import asyncpg
+except ImportError:  # библиотека нужна только для интеграции апелляций
+    asyncpg = None
+
 app = FastAPI(title="Cz Garant")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -15,10 +21,29 @@ jinja_env = Environment(
     autoescape=select_autoescape(["html"]),
 )
 
+APPEAL_MAX_LEN = 1000
+db_pool = None
+
 
 def render(template_name: str, **context) -> HTMLResponse:
     template = jinja_env.get_template(template_name)
     return HTMLResponse(template.render(**context))
+
+
+@app.on_event("startup")
+async def on_startup():
+    global db_pool
+    if asyncpg and config.database_url:
+        try:
+            db_pool = await asyncpg.create_pool(config.database_url, min_size=1, max_size=3)
+        except Exception:
+            db_pool = None
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    if db_pool:
+        await db_pool.close()
 
 
 # ---------- ДАННЫЕ ПРОЕКТА ----------
@@ -29,7 +54,7 @@ SERVICES = [
         "name": "Скам-база",
         "bot": "@Czskambazabot",
         "logo": "/static/img/logo-scambase.png",
-        "description": "Проверка пользователей по базе недобросовестных участников — по ID или юзернейму.",
+        "description": "Проверка пользователей по базе недобросовестных участников через ID.",
         "long_description": (
             "Скам-база хранит записи о недобросовестных участниках по числовому "
             "Telegram ID — надёжнее username, потому что ник можно сменить, "
@@ -124,7 +149,7 @@ FAQ = [
     },
     {
         "q": "Что делать, если меня замутили или забанили по ошибке?",
-        "a": "Напишите боту в личные сообщения и нажмите кнопку «Подать апелляцию», затем опишите ситуацию одним сообщением.",
+        "a": "Подайте апелляцию прямо на сайте (кнопка «Подать апелляцию» в личном кабинете) или напишите боту в личные сообщения и нажмите «Подать апелляцию» там.",
     },
     {
         "q": "Как оставить отзыв о сделке?",
@@ -154,6 +179,10 @@ def base_context(request: Request, user: dict | None) -> dict:
         "bot_username": config.bot_username,
         "user": user,
     }
+
+
+def esc(text: str) -> str:
+    return html.escape(text or "")
 
 
 # ---------- МАРШРУТЫ ----------
@@ -236,7 +265,7 @@ async def telegram_login_callback(request: Request):
         httponly=True,
         secure=True,
         samesite="lax",
-        max_age=30 * 24 * 3600,  # 30 дней — чтобы не логиниться заново каждую неделю
+        max_age=7 * 24 * 3600,  # 7 дней
     )
     return response
 
@@ -277,6 +306,93 @@ async def contact_submit(request: Request, message: str = Form(...)):
                     json={"chat_id": admin_id, "text": text, "parse_mode": "HTML"},
                 )
             except Exception:
-                pass  # не роняем запрос пользователя из-за одного неотправленного уведомления
+                pass
 
     return render("dashboard.html", **base_context(request, user), sent=True)
+
+
+# ---------- АПЕЛЛЯЦИИ (интеграция с ботом-чат-менеджером) ----------
+
+@app.get("/appeal", response_class=HTMLResponse)
+async def appeal_form(request: Request):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/")
+    return render("appeal.html", **base_context(request, user), max_len=APPEAL_MAX_LEN)
+
+
+@app.post("/appeal")
+async def appeal_submit(request: Request, text: str = Form(...)):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/", status_code=303)
+
+    appeal_text = (text or "").strip()[:APPEAL_MAX_LEN]
+    if not appeal_text:
+        return render(
+            "appeal.html", **base_context(request, user),
+            max_len=APPEAL_MAX_LEN, error="Введите текст апелляции.",
+        )
+
+    if not db_pool or not config.chat_bot_token:
+        return render(
+            "appeal.html", **base_context(request, user),
+            max_len=APPEAL_MAX_LEN,
+            error="Приём апелляций временно недоступен. Напишите боту в личные сообщения.",
+        )
+
+    user_id = int(user["id"])
+    username = user.get("username") or ""
+
+    async with db_pool.acquire() as c:
+        appeal_id = await c.fetchval(
+            "INSERT INTO appeals (user_id, username, text) VALUES ($1, $2, $3) RETURNING id",
+            user_id, username, appeal_text,
+        )
+        last = await c.fetchrow(
+            "SELECT action, chat_id, reason, ts FROM action_logs "
+            "WHERE target_id=$1 AND action NOT ILIKE 'APPEAL_%' "
+            "AND (action ILIKE '%MUTE%' OR action ILIKE '%BAN%' OR action IN ('MUTE','BAN')) "
+            "ORDER BY ts DESC LIMIT 1",
+            user_id,
+        )
+
+    is_ban = bool(last) and "BAN" in last["action"]
+    is_mute = bool(last) and "MUTE" in last["action"]
+
+    keyboard_buttons = []
+    if is_ban:
+        keyboard_buttons = [[
+            {"text": "✅ Разбанить", "callback_data": f"appeal_unban:{appeal_id}"},
+            {"text": "🚫 Оставить в бане", "callback_data": f"appeal_keep:{appeal_id}"},
+        ]]
+    elif is_mute:
+        keyboard_buttons = [[
+            {"text": "✅ Размьютить", "callback_data": f"appeal_unmute:{appeal_id}"},
+            {"text": "🔇 Оставить в мьюте", "callback_data": f"appeal_keep:{appeal_id}"},
+        ]]
+
+    notify_text = (
+        f"🧾 <b>Новая апелляция #{appeal_id}</b> (с сайта)\n\n"
+        f"👤 От: {esc(user.get('first_name', ''))} (@{esc(username) or 'без username'})\n"
+        f"🆔 Telegram ID: <code>{user_id}</code>\n\n"
+        f"<b>Текст апелляции:</b>\n<blockquote>{esc(appeal_text)}</blockquote>"
+    )
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        for admin_id in config.admin_ids:
+            try:
+                payload = {"chat_id": admin_id, "text": notify_text, "parse_mode": "HTML"}
+                if keyboard_buttons:
+                    payload["reply_markup"] = {"inline_keyboard": keyboard_buttons}
+                await client.post(
+                    f"https://api.telegram.org/bot{config.chat_bot_token}/sendMessage",
+                    json=payload,
+                )
+            except Exception:
+                pass
+
+    return render(
+        "appeal.html", **base_context(request, user),
+        max_len=APPEAL_MAX_LEN, sent=True,
+    )
