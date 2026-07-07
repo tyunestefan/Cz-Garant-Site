@@ -281,7 +281,7 @@ async def logout():
 async def dashboard(request: Request):
     user = get_current_user(request)
     if not user:
-        return RedirectResponse("/")
+        return render("login_required.html", **base_context(request, user))
     return render("dashboard.html", **base_context(request, user))
 
 
